@@ -2,7 +2,7 @@
 
 **Track:** Pathway Track  
 **Concept:** Linear Attention / Recurrent State vs. KV Cache  
-**Live demo:** https://claude.ai/code/artifact/107058ee-5d11-4359-b019-9f0e1ec31d1d
+
 
 ---
 
