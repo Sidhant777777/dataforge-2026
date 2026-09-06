@@ -1,0 +1,1150 @@
+<title>Memory vs. State</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* ─── Tokens: Light (default) ─── */
+:root {
+  --bg: #EFF1F9;
+  --surface: #FFFFFF;
+  --surface-2: #E3E7F5;
+  --border: #C6CCEA;
+  --text: #0B0E1C;
+  --muted: #58637A;
+  --lin: #1D6ED0;
+  --lin-bg: rgba(29,110,208,0.09);
+  --soft: #C74826;
+  --soft-bg: rgba(199,72,38,0.09);
+  --bdh: #5E31BC;
+  --bdh-bg: rgba(94,49,188,0.09);
+  --good: #167A52;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06),0 4px 14px rgba(0,0,0,0.04);
+}
+/* ─── Dark: media ─── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #090C13;
+    --surface: #0F1220;
+    --surface-2: #161A28;
+    --border: #1E2338;
+    --text: #CDD3EC;
+    --muted: #606680;
+    --lin: #4A98FF;
+    --lin-bg: rgba(74,152,255,0.11);
+    --soft: #FF6E4A;
+    --soft-bg: rgba(255,110,74,0.11);
+    --bdh: #9068FF;
+    --bdh-bg: rgba(144,104,255,0.11);
+    --good: #2CC48A;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4),0 4px 14px rgba(0,0,0,0.25);
+  }
+}
+/* ─── Dark: explicit toggle ─── */
+:root[data-theme="dark"] {
+  --bg: #090C13;
+  --surface: #0F1220;
+  --surface-2: #161A28;
+  --border: #1E2338;
+  --text: #CDD3EC;
+  --muted: #606680;
+  --lin: #4A98FF;
+  --lin-bg: rgba(74,152,255,0.11);
+  --soft: #FF6E4A;
+  --soft-bg: rgba(255,110,74,0.11);
+  --bdh: #9068FF;
+  --bdh-bg: rgba(144,104,255,0.11);
+  --good: #2CC48A;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4),0 4px 14px rgba(0,0,0,0.25);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  font-size: 15px;
+}
+
+/* ─── Layout ─── */
+.wrap { max-width: 880px; margin: 0 auto; padding: 0 24px; }
+
+/* ─── Header ─── */
+header {
+  padding: 52px 0 44px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 72px;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2rem,5vw,3rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  text-wrap: balance;
+  margin-bottom: 20px;
+}
+.claim {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 640px;
+  line-height: 1.65;
+  border-left: 2px solid var(--border);
+  padding-left: 16px;
+}
+.claim strong { color: var(--text); font-weight: 500; }
+
+/* ─── Sections ─── */
+.section { margin-bottom: 88px; }
+.sec-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.section h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin-bottom: 12px;
+}
+.section > p, .section .intro {
+  color: var(--muted);
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+.section > p strong, .section .intro strong { color: var(--text); font-weight: 500; }
+
+/* ─── Slider ─── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.slider-row label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--lin); cursor: pointer; }
+.slider-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* ─── Two panels ─── */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) { .panels { grid-template-columns: 1fr; } }
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.panel-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.panel-name.lin { color: var(--lin); }
+.panel-name.soft { color: var(--soft); }
+.panel-name.bdh { color: var(--bdh); }
+.mem-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface-2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.panel-body { padding: 16px; }
+
+/* ─── KV list ─── */
+.kv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.kv-row {
+  display: grid;
+  grid-template-columns: 26px 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  animation: fadeRow .18s ease;
+}
+.kv-row:last-child { border-bottom: none; }
+.kv-idx {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+.mini-bars {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 18px;
+}
+.mini-bar { width: 5px; border-radius: 2px; min-height: 2px; }
+@keyframes fadeRow {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ─── Heatmap ─── */
+.heatmap { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.hm-col-labels {
+  display: flex;
+  gap: 2px;
+  padding-left: 22px;
+  margin-bottom: 1px;
+}
+.hm-cl {
+  width: 30px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+}
+.hm-row { display: flex; align-items: center; gap: 2px; }
+.hm-rl {
+  width: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  text-align: right;
+  flex-shrink: 0;
+}
+.hm-cell {
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .25s ease;
+}
+.hm-cell span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: var(--text);
+  opacity: .55;
+}
+
+/* ─── Memory bars ─── */
+.mem-bars { display: flex; flex-direction: column; gap: 10px; }
+.mem-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.mem-bar-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  white-space: nowrap;
+  min-width: 130px;
+  font-weight: 500;
+}
+.mem-bar-track {
+  flex: 1;
+  height: 7px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mem-bar-fill { height: 100%; border-radius: 4px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+.mem-bar-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Section 2: Retrieval ─── */
+.pairs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.pair-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  cursor: default;
+}
+.pair-chip.toggle-chip {
+  cursor: pointer;
+  border-style: dashed;
+  opacity: .65;
+  transition: opacity .15s, border-color .15s, background .15s;
+}
+.pair-chip.toggle-chip.on {
+  border-style: solid;
+  border-color: var(--soft);
+  background: var(--soft-bg);
+  opacity: 1;
+}
+.pair-chip.toggle-chip .toggle-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.pair-chip.toggle-chip.on .toggle-label { color: var(--soft); }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.sep { color: var(--muted); font-weight: 300; }
+
+.query-label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.query-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.qbtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  transition: border-color .15s, background .15s;
+}
+.qbtn:hover { border-color: var(--lin); }
+.qbtn.active { border-color: var(--lin); background: var(--lin-bg); }
+
+/* ─── Result panels ─── */
+.result-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 600px) { .result-panels { grid-template-columns: 1fr; } }
+.result-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.result-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.result-panel-head .panel-name { font-size: 10px; }
+.result-rows { display: flex; flex-direction: column; gap: 7px; }
+.rrow {
+  display: grid;
+  grid-template-columns: 76px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.rrow-name { color: var(--muted); }
+.rrow-name.top { color: var(--text); font-weight: 500; }
+.rrow-track { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.rrow-fill { height: 100%; border-radius: 3px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+.rrow-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rrow-pct.top { color: var(--text); font-weight: 500; }
+
+.interference-box {
+  padding: 12px 16px;
+  background: var(--soft-bg);
+  border: 1px solid rgba(255,110,74,.25);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.55;
+  display: none;
+}
+.interference-box.show { display: block; }
+.interference-box strong { color: var(--soft); }
+
+/* ─── Section 3: Equations ─── */
+.eq-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.eq-block.bdh-bordered { border-left: 3px solid var(--bdh); }
+.eq-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.eq {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  line-height: 1.9;
+  color: var(--text);
+}
+.eq .op { color: var(--bdh); }
+.eq .var { color: var(--lin); }
+.eq-explain {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 560px;
+}
+.eq-explain em { color: var(--text); font-style: normal; font-weight: 500; }
+
+/* ─── Live step demo ─── */
+.step-demo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.step-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.step-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  transition: background .15s, border-color .15s;
+}
+.step-btn:hover { background: var(--bdh-bg); border-color: var(--bdh); }
+.step-btn:disabled { opacity: .4; cursor: default; }
+.step-indicator {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+.step-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  min-height: 32px;
+}
+.step-token-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  background: var(--bdh-bg);
+  color: var(--bdh);
+  white-space: nowrap;
+}
+.step-eq-live {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.step-eq-live .var { color: var(--lin); }
+.step-eq-live .op { color: var(--bdh); }
+
+/* ─── Footer ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0 48px;
+  margin-top: 32px;
+}
+.cite-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.cite {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  padding-left: 28px;
+  position: relative;
+  line-height: 1.55;
+}
+.cite::before {
+  content: '[' attr(data-n) ']';
+  position: absolute;
+  left: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ─── Theme toggle ─── */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  box-shadow: var(--shadow);
+  transition: background .15s;
+  z-index: 10;
+}
+.theme-toggle:hover { background: var(--surface-2); }
+</style>
+
+<!-- Theme toggle -->
+<button class="theme-toggle" id="theme-toggle">☽ dark</button>
+
+<!-- Header -->
+<header>
+  <div class="wrap">
+    <div class="eyebrow">DataForge 2026 · Pathway Track · Interactive Explainer</div>
+    <h1>Memory vs. State</h1>
+    <p class="claim">
+      A <strong>fixed-size recurrent state</strong> can process a sequence of any length without
+      growing its memory — but it pays by losing the ability to <strong>perfectly retrieve any
+      past token on demand</strong>.
+    </p>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ── Section 1: Memory Growth ── -->
+<section class="section" id="sec1">
+  <div class="sec-label">Part 01</div>
+  <h2>The Memory Problem</h2>
+  <p class="intro">
+    Standard attention stores a key and value vector for every token it has seen —
+    the cache grows with every new input. <strong>Linear attention folds each token's
+    contribution into one fixed matrix</strong>, overwriting rather than appending.
+    Drag the slider and watch what each model keeps in memory.
+  </p>
+
+  <div class="slider-row">
+    <label for="seq-slider">Tokens in context</label>
+    <input type="range" id="seq-slider" min="1" max="20" value="10">
+    <span class="slider-val" id="seq-val">10</span>
+    <span style="font-size:12px;color:var(--muted)">/ 20</span>
+  </div>
+
+  <div class="panels">
+    <!-- KV Cache -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-name soft">Softmax · KV Cache</span>
+        <span class="mem-tag" id="kv-cost">n × 8 = 80 floats</span>
+      </div>
+      <div class="panel-body">
+        <div class="kv-list" id="kv-list"></div>
+      </div>
+    </div>
+    <!-- Recurrent state -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-name lin">Linear Attn · Recurrent State</span>
+        <span class="mem-tag" style="color:var(--lin)">d² = 16 floats</span>
+      </div>
+      <div class="panel-body">
+        <div id="heatmap-1" class="heatmap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory cost bars -->
+  <div class="mem-bars">
+    <div class="mem-bar-row">
+      <span class="mem-bar-name" style="color:var(--soft)">KV Cache</span>
+      <div class="mem-bar-track">
+        <div class="mem-bar-fill" id="kv-bar" style="background:var(--soft)"></div>
+      </div>
+      <span class="mem-bar-count" id="kv-bar-label">80 floats</span>
+    </div>
+    <div class="mem-bar-row">
+      <span class="mem-bar-name" style="color:var(--lin)">Recurrent State</span>
+      <div class="mem-bar-track">
+        <div class="mem-bar-fill" id="lin-bar" style="background:var(--lin);width:5%"></div>
+      </div>
+      <span class="mem-bar-count" style="color:var(--lin)">16 floats (constant)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Section 2: Retrieval Test ── -->
+<section class="section" id="sec2">
+  <div class="sec-label">Part 02</div>
+  <h2>The Retrieval Test</h2>
+  <p class="intro">
+    Six color→fruit associations are loaded into both models.
+    Query any color — softmax retrieves the exact answer.
+    Linear attention returns a <strong>blend weighted by key similarity</strong>:
+    perfect when keys are orthogonal, degraded when they overlap.
+    Toggle the orange pair on to introduce a key similar to yellow and watch interference appear.
+  </p>
+
+  <p class="query-label">Stored associations</p>
+  <div class="pairs-row" id="pairs-row"></div>
+
+  <p class="query-label">Query a color</p>
+  <div class="query-btns" id="query-btns"></div>
+
+  <div class="result-panels">
+    <div class="result-panel">
+      <div class="result-panel-head">
+        <span class="panel-name soft">Softmax attention</span>
+      </div>
+      <div class="result-rows" id="soft-res"></div>
+    </div>
+    <div class="result-panel">
+      <div class="result-panel-head">
+        <span class="panel-name lin">Linear attention</span>
+      </div>
+      <div class="result-rows" id="lin-res"></div>
+    </div>
+  </div>
+
+  <div class="interference-box" id="interference-box">
+    <strong>Interference.</strong> The query key (yellow) overlaps with a stored key (orange,
+    similarity ≈ 0.95). Linear attention cannot distinguish them and returns a blended output:
+    roughly equal probability for banana and orange.
+    Softmax uses exp(·) to sharpen the scores — it still concentrates more mass on the correct answer,
+    but the fundamental problem exists for both. This is the tradeoff:
+    fixed memory means all writes share the same matrix.
+  </div>
+</section>
+
+<!-- ── Section 3: BDH ── -->
+<section class="section" id="sec3">
+  <div class="sec-label">Part 03</div>
+  <h2>BDH — Attention as Synaptic Memory</h2>
+  <p class="intro">
+    Dragon Hatchling (BDH) is Pathway's Post-Transformer architecture. It does not treat
+    linear attention as an optimization trick — it makes the state matrix the
+    <strong>primary computational fabric</strong>, with reasoning and memory sharing the same substrate.
+    BDH-CQ extends this to in-context learning without a backward pass at test time.
+  </p>
+
+  <div class="eq-block">
+    <div class="eq-tag">Write — Hebbian update (per token)</div>
+    <div class="eq">
+      <span class="var">S</span> <span class="op">←</span> <span class="var">S</span> <span class="op">+</span> <span class="var">k</span> <span class="op">⊗</span> <span class="var">v</span>
+    </div>
+    <div class="eq-explain">
+      For each incoming token, its key vector <em>k</em> is outer-producted with its value
+      vector <em>v</em>. The result is added to the state matrix <em>S</em>. No new slot
+      is allocated — the write distributes information across the shared matrix.
+      This is exactly a Hebbian synaptic weight update.
+    </div>
+  </div>
+
+  <div class="eq-block">
+    <div class="eq-tag">Normalization accumulator</div>
+    <div class="eq">
+      <span class="var">z</span> <span class="op">←</span> <span class="var">z</span> <span class="op">+</span> <span class="var">k</span>
+    </div>
+    <div class="eq-explain">
+      A companion vector <em>z</em> accumulates the sum of all stored keys,
+      used to normalize retrieval so outputs stay on a consistent scale.
+    </div>
+  </div>
+
+  <div class="eq-block">
+    <div class="eq-tag">Read — associative retrieval</div>
+    <div class="eq">
+      <span class="var">o</span> <span class="op">=</span> <span class="op">(</span><span class="var">S</span> <span class="op">·</span> <span class="var">q</span><span class="op">)</span> <span class="op">/</span> <span class="op">(</span><span class="var">z</span> <span class="op">·</span> <span class="var">q</span><span class="op">)</span>
+    </div>
+    <div class="eq-explain">
+      A query vector <em>q</em> is multiplied against the state matrix.
+      This is equivalent to softmax attention with a linear (identity) kernel —
+      replacing exp(q·k) with q·k. The result:
+      constant-time retrieval from a constant-size memory, at the cost of exact selectivity.
+    </div>
+  </div>
+
+  <!-- Live step animation -->
+  <div class="step-demo">
+    <div class="eq-tag">Live write — watch the state update token by token</div>
+    <div class="step-controls">
+      <button class="step-btn" id="step-btn">Write next token →</button>
+      <button class="step-btn" id="reset-btn">Reset</button>
+      <span class="step-indicator" id="step-indicator">0 / 6 tokens written</span>
+    </div>
+    <div class="step-current" id="step-current">
+      <span style="font-size:13px;color:var(--muted)">Press "Write next token" to begin.</span>
+    </div>
+    <div id="heatmap-step" class="heatmap"></div>
+  </div>
+
+  <div class="eq-block bdh-bordered">
+    <div class="eq-tag" style="color:var(--bdh)">BDH — what changes beyond vanilla linear attention</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.7;">
+      BDH reports ~5% sparse non-negative activations per token. Rather than every neuron
+      writing to the state on every step, only a small, input-dependent subset fires.
+      This reduces interference: fewer writes per step means each token contaminates the state less.<br><br>
+      BDH-CQ further removes the need for evaluation-task demonstrations at training time.
+      Adaptation happens through the recurrent state at inference —
+      no parameter updates, no backward pass.
+      The state is the adapter.<br><br>
+      <span style="color:var(--muted);font-size:13px;">
+        <strong style="color:var(--muted)">Limitation (stated):</strong> BDH's session memory
+        is not equivalent to durable cross-session learning.
+        State capacity is bounded by the matrix size — sufficiently long or dense sequences
+        will still degrade retrieval through interference.
+        This is an open problem in recurrent architecture design.
+      </span>
+    </div>
+  </div>
+</section>
+
+</div><!-- /wrap -->
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cite-label">Primary sources</div>
+    <p class="cite" data-n="1">Katharopoulos et al. (2020). <em>Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention.</em> ICML 2020. arXiv:2006.16236.</p>
+    <p class="cite" data-n="2">Pathway (2024). <em>Dragon Hatchling (BDH): A Brain-Inspired Post-Transformer Architecture.</em> Pathway Research Technical Report.</p>
+    <p class="cite" data-n="3">Pathway (2024). <em>BDH-CQ: In-Context Learning via Recurrent State without a Backward Pass.</em> Pathway Research Technical Report.</p>
+    <p class="cite" data-n="4">Dao & Gu (2024). <em>Transformers are SSMs: Generalized Models and Efficient Methods with Structured State Spaces.</em> NeurIPS 2024. arXiv:2405.21060.</p>
+    <p class="cite" data-n="5">Sun et al. (2023). <em>Retentive Network: A Successor to Transformer for Large Language Models.</em> arXiv:2307.08621.</p>
+    <p class="cite" data-n="6">Schlag et al. (2021). <em>Linear Transformers are Secretly Fast Weight Programmers.</em> ICML 2021. arXiv:2102.11174.</p>
+  </div>
+</footer>
+
+<script>
+// ════════════════════════════════════════════
+//  Math utilities
+// ════════════════════════════════════════════
+const DK = 4, DV = 6; // key dim, value dim
+
+function zeros(r, c) {
+  return Array.from({length: r}, () => new Float64Array(c));
+}
+function dot(a, b) {
+  let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s;
+}
+function norm(v) {
+  return Math.sqrt(v.reduce((s,x) => s + x*x, 0));
+}
+function normalize(v) {
+  const n = norm(v) || 1; return v.map(x => x/n);
+}
+function outerAdd(S, k, v) {
+  for (let i = 0; i < k.length; i++)
+    for (let j = 0; j < v.length; j++)
+      S[i][j] += k[i] * v[j];
+}
+function matQueryT(S, q) {
+  // S^T @ q → DV-length output
+  const out = new Float64Array(S[0].length);
+  for (let j = 0; j < S[0].length; j++)
+    for (let i = 0; i < q.length; i++)
+      out[j] += S[i][j] * q[i];
+  return out;
+}
+function softmax(scores) {
+  const max = Math.max(...scores);
+  const ex = scores.map(s => Math.exp(s - max));
+  const sum = ex.reduce((a,b) => a+b, 0);
+  return ex.map(e => e/sum);
+}
+
+// ════════════════════════════════════════════
+//  Data: 5 base pairs + 1 toggleable (orange)
+// ════════════════════════════════════════════
+const BASE_PAIRS = [
+  { color:'red',    hex:'#D84848', fruit:'apple',     fi:0, key: normalize([1.0,0.0,0.0,0.0]) },
+  { color:'blue',   hex:'#3E78D4', fruit:'blueberry', fi:1, key: normalize([0.0,1.0,0.0,0.0]) },
+  { color:'yellow', hex:'#C4A800', fruit:'banana',    fi:2, key: normalize([0.0,0.1,1.0,0.1]) },
+  { color:'green',  hex:'#2FA06A', fruit:'lime',      fi:4, key: normalize([0.0,0.6,0.0,0.8]) },
+  { color:'purple', hex:'#7B42CC', fruit:'grape',     fi:5, key: normalize([0.8,0.0,0.0,0.6]) },
+];
+const ORANGE_PAIR = { color:'orange', hex:'#D47830', fruit:'orange', fi:3, key: normalize([0.0,0.15,0.98,0.12]) };
+const FRUITS = ['apple','blueberry','banana','orange','lime','grape'];
+
+let orangeOn = false;
+let activeQuery = 'yellow';
+
+function activePairs() {
+  return orangeOn ? [...BASE_PAIRS, ORANGE_PAIR] : BASE_PAIRS;
+}
+
+function makeVal(fi) {
+  const v = new Float64Array(DV); v[fi] = 1; return v;
+}
+
+// ── Linear attention state ──
+function buildLinState(pairs) {
+  const S = zeros(DK, DV);
+  const z = new Float64Array(DK);
+  for (const p of pairs) {
+    outerAdd(S, p.key, makeVal(p.fi));
+    for (let i = 0; i < DK; i++) z[i] += p.key[i];
+  }
+  return { S, z };
+}
+function linQuery(S, z, qKey) {
+  const num = matQueryT(S, qKey);
+  const den = dot(z, qKey) || 1;
+  return Array.from(num).map(x => x/den);
+}
+
+// ── Softmax attention state ──
+function softQuery(pairs, qKey) {
+  const scores = pairs.map(p => dot(p.key, qKey) * 4); // ×4 to emphasise sharpening
+  const weights = softmax(scores);
+  const out = new Float64Array(DV);
+  pairs.forEach((p, i) => {
+    const v = makeVal(p.fi);
+    for (let j = 0; j < DV; j++) out[j] += weights[i] * v[j];
+  });
+  // Renormalize to [0,1]
+  const tot = Array.from(out).reduce((a,b)=>a+b,0) || 1;
+  return Array.from(out).map(x => x/tot);
+}
+
+// ════════════════════════════════════════════
+//  Heatmap renderer
+// ════════════════════════════════════════════
+function cellColor(val, maxAbs) {
+  const t = Math.max(-1, Math.min(1, val / (maxAbs || 0.01)));
+  if (t >= 0) {
+    // positive: surface-2 → lin
+    const isDark = document.documentElement.dataset.theme === 'dark' ||
+      (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    if (isDark)
+      return `rgba(74,152,255,${(t * 0.75 + 0.08).toFixed(3)})`;
+    return `rgba(29,110,208,${(t * 0.6 + 0.07).toFixed(3)})`;
+  } else {
+    const isDark = document.documentElement.dataset.theme === 'dark' ||
+      (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    if (isDark)
+      return `rgba(255,110,74,${(-t * 0.65 + 0.06).toFixed(3)})`;
+    return `rgba(199,72,38,${(-t * 0.5 + 0.05).toFixed(3)})`;
+  }
+}
+
+function renderHeatmap(containerId, S, rows, cols, colLabels, rowLabels) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  let maxAbs = 0.01;
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++)
+      maxAbs = Math.max(maxAbs, Math.abs(S[r][c]));
+
+  let html = '<div class="hm-col-labels">';
+  for (let c = 0; c < cols; c++)
+    html += `<div class="hm-cl">${colLabels ? colLabels[c] : 'v'+(c+1)}</div>`;
+  html += '</div>';
+
+  for (let r = 0; r < rows; r++) {
+    html += '<div class="hm-row">';
+    html += `<div class="hm-rl">${rowLabels ? rowLabels[r] : 'k'+(r+1)}</div>`;
+    for (let c = 0; c < cols; c++) {
+      const bg = cellColor(S[r][c], maxAbs);
+      const vStr = S[r][c].toFixed(2);
+      html += `<div class="hm-cell" style="background:${bg}"><span>${vStr}</span></div>`;
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+// ════════════════════════════════════════════
+//  Section 1: Sequence memory demo
+// ════════════════════════════════════════════
+function seededRand(seed) {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+const SEQ_TOKENS = Array.from({length: 20}, (_, i) => ({
+  name: `t${i+1}`,
+  key: normalize([seededRand(i*4),seededRand(i*4+1),seededRand(i*4+2),seededRand(i*4+3)]),
+  val: normalize([seededRand(i*4+10),seededRand(i*4+11),seededRand(i*4+12),seededRand(i*4+13)]),
+}));
+
+function buildSeqState(n) {
+  const S = zeros(DK, DK);
+  for (let i = 0; i < n; i++) {
+    const {key, val} = SEQ_TOKENS[i];
+    for (let r = 0; r < DK; r++)
+      for (let c = 0; c < DK; c++)
+        S[r][c] += key[r] * val[c];
+  }
+  return S;
+}
+
+function renderSection1(n) {
+  document.getElementById('seq-val').textContent = n;
+  const cost = n * 8;
+  document.getElementById('kv-cost').textContent = `n × 8 = ${cost} floats`;
+  document.getElementById('kv-bar-label').textContent = `${cost} floats`;
+
+  // KV list
+  const list = document.getElementById('kv-list');
+  let html = '';
+  for (let i = 0; i < n; i++) {
+    const {name, key, val} = SEQ_TOKENS[i];
+    const kb = key.map(v => `<div class="mini-bar" style="height:${Math.round(v*16)+2}px;background:var(--soft);opacity:.75"></div>`).join('');
+    const vb = val.map(v => `<div class="mini-bar" style="height:${Math.round(v*16)+2}px;background:var(--lin);opacity:.75"></div>`).join('');
+    html += `<div class="kv-row">
+      <span class="kv-idx">${i+1}</span>
+      <div class="mini-bars">${kb}</div>
+      <div class="mini-bars">${vb}</div>
+    </div>`;
+  }
+  list.innerHTML = html;
+  list.scrollTop = list.scrollHeight;
+
+  // Heatmap
+  const S = buildSeqState(n);
+  renderHeatmap('heatmap-1', S, DK, DK, null, null);
+
+  // Memory bars (max = 20 * 8 = 160)
+  const maxMem = 160;
+  document.getElementById('kv-bar').style.width = (cost / maxMem * 100) + '%';
+  document.getElementById('lin-bar').style.width = (16 / maxMem * 100) + '%';
+}
+
+// ════════════════════════════════════════════
+//  Section 2: Retrieval demo
+// ════════════════════════════════════════════
+function renderPairs() {
+  const el = document.getElementById('pairs-row');
+  let html = BASE_PAIRS.map(p =>
+    `<div class="pair-chip">
+      <div class="dot" style="background:${p.hex}"></div>
+      <span>${p.color}</span><span class="sep">→</span><span>${p.fruit}</span>
+    </div>`
+  ).join('');
+  html += `<div class="pair-chip toggle-chip ${orangeOn?'on':''}" id="orange-toggle" title="Toggle orange (similar key to yellow)">
+    <div class="dot" style="background:#D47830"></div>
+    <span>orange</span><span class="sep">→</span><span>orange</span>
+    <span class="toggle-label">${orangeOn?'on — similar key to yellow':'off — click to add'}</span>
+  </div>`;
+  el.innerHTML = html;
+  document.getElementById('orange-toggle').onclick = () => {
+    orangeOn = !orangeOn;
+    renderPairs();
+    runQuery(activeQuery);
+  };
+}
+
+function renderQueryBtns() {
+  const allColors = [...BASE_PAIRS, ORANGE_PAIR];
+  document.getElementById('query-btns').innerHTML = allColors.map(p =>
+    `<button class="qbtn ${activeQuery===p.color?'active':''}" data-color="${p.color}">
+      <div class="dot" style="background:${p.hex}"></div>${p.color}
+    </button>`
+  ).join('');
+  document.querySelectorAll('.qbtn').forEach(b => {
+    b.addEventListener('click', () => runQuery(b.dataset.color));
+  });
+}
+
+function renderResultBars(containerId, probs, topIdx, accentVar) {
+  const sorted = FRUITS.map((f,i) => ({f, p: probs[i], i})).sort((a,b) => b.p-a.p);
+  const el = document.getElementById(containerId);
+  el.innerHTML = sorted.map(({f, p, i}) => {
+    const pct = Math.round(p * 100);
+    const isTop = i === topIdx;
+    return `<div class="rrow">
+      <span class="rrow-name ${isTop?'top':''}">${f}</span>
+      <div class="rrow-track">
+        <div class="rrow-fill" style="width:${pct}%;background:${isTop?'var('+accentVar+')':'var(--border)'}"></div>
+      </div>
+      <span class="rrow-pct ${isTop?'top':''}">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+function runQuery(colorName) {
+  activeQuery = colorName;
+  renderQueryBtns();
+
+  const pairs = activePairs();
+  const qPair = [...BASE_PAIRS, ORANGE_PAIR].find(p => p.color === colorName);
+  if (!qPair) return;
+
+  const { S, z } = buildLinState(pairs);
+  const linOut = linQuery(S, z, qPair.key);
+  const softOut = softQuery(pairs, qPair.key);
+
+  // Clamp negatives, re-normalize
+  const linPos = linOut.map(x => Math.max(0, x));
+  const linSum = linPos.reduce((a,b)=>a+b,0) || 1;
+  const linProbs = linPos.map(x => x/linSum);
+
+  const softPos = softOut.map(x => Math.max(0,x));
+  const softSum = softPos.reduce((a,b)=>a+b,0) || 1;
+  const softProbs = softPos.map(x => x/softSum);
+
+  const linTop = linProbs.indexOf(Math.max(...linProbs));
+  const softTop = softProbs.indexOf(Math.max(...softProbs));
+
+  renderResultBars('soft-res', softProbs, softTop, '--soft');
+  renderResultBars('lin-res', linProbs, linTop, '--lin');
+
+  // Interference note
+  const show = orangeOn && (colorName === 'yellow' || colorName === 'orange');
+  document.getElementById('interference-box').classList.toggle('show', show);
+}
+
+// ════════════════════════════════════════════
+//  Section 3: Live step demo
+// ════════════════════════════════════════════
+const STEP_PAIRS = [...BASE_PAIRS, ORANGE_PAIR];
+let stepIdx = 0;
+let stepS = zeros(DK, DV);
+let stepZ = new Float64Array(DK);
+
+function renderStepHeatmap() {
+  renderHeatmap('heatmap-step', stepS, DK, DV,
+    FRUITS, ['k1','k2','k3','k4']);
+}
+
+function resetStep() {
+  stepIdx = 0;
+  stepS = zeros(DK, DV);
+  stepZ = new Float64Array(DK);
+  document.getElementById('step-indicator').textContent = '0 / 6 tokens written';
+  document.getElementById('step-current').innerHTML =
+    '<span style="font-size:13px;color:var(--muted)">Press "Write next token" to begin.</span>';
+  document.getElementById('step-btn').disabled = false;
+  renderStepHeatmap();
+}
+
+function stepWrite() {
+  if (stepIdx >= STEP_PAIRS.length) return;
+  const p = STEP_PAIRS[stepIdx];
+  const v = makeVal(p.fi);
+  outerAdd(stepS, p.key, v);
+  for (let i = 0; i < DK; i++) stepZ[i] += p.key[i];
+  stepIdx++;
+
+  document.getElementById('step-indicator').textContent = `${stepIdx} / ${STEP_PAIRS.length} tokens written`;
+  document.getElementById('step-current').innerHTML = `
+    <span class="step-token-badge">${p.color} → ${p.fruit}</span>
+    <span class="step-eq-live">
+      <span class="var">S</span> <span class="op">←</span> <span class="var">S</span> <span class="op">+</span> k<sub>${p.color}</sub> <span class="op">⊗</span> e<sub>${p.fruit}</sub>
+    </span>`;
+  if (stepIdx >= STEP_PAIRS.length)
+    document.getElementById('step-btn').disabled = true;
+  renderStepHeatmap();
+}
+
+document.getElementById('step-btn').addEventListener('click', stepWrite);
+document.getElementById('reset-btn').addEventListener('click', resetStep);
+
+// ════════════════════════════════════════════
+//  Theme toggle
+// ════════════════════════════════════════════
+const themeBtn = document.getElementById('theme-toggle');
+let darkMode = window.matchMedia('(prefers-color-scheme:dark)').matches;
+function applyTheme() {
+  document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
+  themeBtn.textContent = darkMode ? '☀ light' : '☽ dark';
+  // Re-render heatmaps to update cell colors
+  const n = +document.getElementById('seq-slider').value;
+  const S1 = buildSeqState(n);
+  renderHeatmap('heatmap-1', S1, DK, DK, null, null);
+  renderStepHeatmap();
+}
+themeBtn.addEventListener('click', () => { darkMode = !darkMode; applyTheme(); });
+
+// ════════════════════════════════════════════
+//  Init
+// ════════════════════════════════════════════
+document.getElementById('seq-slider').addEventListener('input', function() {
+  renderSection1(+this.value);
+});
+
+applyTheme();
+renderSection1(10);
+renderPairs();
+renderQueryBtns();
+runQuery('yellow');
+resetStep();
+</script>
